@@ -3,12 +3,15 @@ const { MongoClient } = require("mongodb");
 // Use .env for Mongo URI in production
 const MONGO_URI =
   process.env.MONGO_URI ||
-  "mongodb+srv://showpex2024_db_user:Rjq4MI7dDoXY1Tis@customecommerce.lqmhvtg.mongodb.net/?appName=customecommerce";
+  "mongodb+srv://showpex2024_db_user:gzZlmeMCHO8fq8Pf@cluster0.pnavans.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(MONGO_URI);
 
 console.log("ENV MONGO_URI:", process.env.MONGO_URI);
-
+console.log(
+  "NEWS CONTROLLER:",
+  require("../modules/category/category.controller"),
+);
 const connectDB = async () => {
   try {
     await client.connect();
@@ -19,6 +22,6 @@ const connectDB = async () => {
   }
 };
 
-const db = client.db("rufaida_elegance");
+const db = client.db("news_portal");
 
 module.exports = { connectDB, db };

@@ -2,7 +2,7 @@ const connectDB = require("../../config/db");
 const { ObjectId } = require("mongodb");
 
 // CREATE NEWS
-exports.createNews = async (req, res) => {
+const createNews = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -15,14 +15,14 @@ exports.createNews = async (req, res) => {
 
     const result = await db.collection("news").insertOne(news);
 
-    res.json(result);
+    res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // GET ALL NEWS
-exports.getAllNews = async (req, res) => {
+const getAllNews = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -32,14 +32,14 @@ exports.getAllNews = async (req, res) => {
       .sort({ createdAt: -1 })
       .toArray();
 
-    res.json(news);
+    res.status(200).json(news);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // GET SINGLE NEWS
-exports.getSingleNews = async (req, res) => {
+const getSingleNews = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -47,20 +47,22 @@ exports.getSingleNews = async (req, res) => {
       _id: new ObjectId(req.params.id),
     });
 
-    if (!news) return res.status(404).json({ message: "Not found" });
+    if (!news) {
+      return res.status(404).json({ message: "News not found" });
+    }
 
     await db
       .collection("news")
       .updateOne({ _id: news._id }, { $inc: { views: 1 } });
 
-    res.json(news);
+    res.status(200).json(news);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // UPDATE NEWS
-exports.updateNews = async (req, res) => {
+const updateNews = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -77,14 +79,14 @@ exports.updateNews = async (req, res) => {
       .collection("news")
       .updateOne({ _id: new ObjectId(req.params.id) }, { $set: updateData });
 
-    res.json(result);
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // DELETE NEWS
-exports.deleteNews = async (req, res) => {
+const deleteNews = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -92,8 +94,17 @@ exports.deleteNews = async (req, res) => {
       _id: new ObjectId(req.params.id),
     });
 
-    res.json(result);
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+// ✅ EXPORT (IMPORTANT)
+module.exports = {
+  createNews,
+  getAllNews,
+  getSingleNews,
+  updateNews,
+  deleteNews,
 };

@@ -2,7 +2,7 @@ const connectDB = require("../../config/db");
 const { ObjectId } = require("mongodb");
 
 // CREATE CATEGORY
-exports.createCategory = async (req, res) => {
+const createCategory = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -11,27 +11,27 @@ exports.createCategory = async (req, res) => {
       createdAt: new Date(),
     });
 
-    res.json(result);
+    res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // GET ALL
-exports.getCategories = async (req, res) => {
+const getCategories = async (req, res) => {
   try {
     const db = await connectDB();
 
     const data = await db.collection("categories").find().toArray();
 
-    res.json(data);
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // UPDATE
-exports.updateCategory = async (req, res) => {
+const updateCategory = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -39,14 +39,14 @@ exports.updateCategory = async (req, res) => {
       .collection("categories")
       .updateOne({ _id: new ObjectId(req.params.id) }, { $set: req.body });
 
-    res.json(result);
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 // DELETE
-exports.deleteCategory = async (req, res) => {
+const deleteCategory = async (req, res) => {
   try {
     const db = await connectDB();
 
@@ -54,8 +54,16 @@ exports.deleteCategory = async (req, res) => {
       _id: new ObjectId(req.params.id),
     });
 
-    res.json(result);
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+// ✅ EXPORT
+module.exports = {
+  createCategory,
+  getCategories,
+  updateCategory,
+  deleteCategory,
 };

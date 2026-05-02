@@ -15,11 +15,10 @@ const verifyAdmin = (req, res, next) => {
     }
 
     req.admin = decoded;
-
     next();
   } catch (error) {
-    res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
-module.exports = { verifyAdmin };
+module.exports = verifyAdmin; // ✅ IMPORTANT FIX
