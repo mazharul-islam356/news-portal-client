@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+require("dotenv").config({ path: ".env.local" });
 
 const ADMIN_PHONE = process.env.ADMIN_PHONE;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

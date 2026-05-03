@@ -6,18 +6,73 @@ const createNews = async (req, res) => {
   try {
     const db = await connectDB();
 
+    if (!req.body.title_bn || !req.body.content_bn) {
+      return res.status(400).json({
+        message: "title_bn and content_bn required",
+      });
+    }
+
+    // status
+    const status = req.body.status || "draft";
+
+    // publishedAt logic
+    let publishedAt = null;
+
+    if (status === "published") {
+      publishedAt = new Date(); // publish now
+    }
+
+    if (status === "scheduled" && req.body.publishedAt) {
+      const parsed = new Date(req.body.publishedAt);
+      if (!isNaN(parsed)) {
+        publishedAt = parsed;
+      }
+    }
+
     const news = {
-      ...req.body,
-      featuredImage: req.file?.path || null,
-      createdAt: new Date(),
+      title: {
+        bn: req.body.title_bn,
+        en: req.body.title_en || "",
+      },
+
+      summary: {
+        bn: req.body.summary_bn || "",
+        en: req.body.summary_en || "",
+      },
+
+      content: {
+        bn: req.body.content_bn,
+        en: req.body.content_en || "",
+      },
+
+      slug: req.body.slug,
+
+      category: req.body.category || "general",
+
+      tags: req.body.tags ? req.body.tags.split(",").map((t) => t.trim()) : [],
+
+      featuredImage: req.files?.[0]?.path || null,
+
       views: 0,
+
+      status, // 👈 new
+      publishedAt, // 👈 new
+
+      createdAt: new Date(),
+      updatedAt: null,
+
+      author: req.admin || null,
     };
 
     const result = await db.collection("news").insertOne(news);
 
-    res.status(201).json(result);
+    return res.status(201).json({
+      success: true,
+      insertedId: result.insertedId,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("CREATE NEWS ERROR:", err);
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -66,21 +121,91 @@ const updateNews = async (req, res) => {
   try {
     const db = await connectDB();
 
+    const {
+      title_bn,
+      title_en,
+      summary_bn,
+      summary_en,
+      content_bn,
+      content_en,
+      slug,
+      category,
+      tags,
+      status,
+      publishedAt,
+    } = req.body;
+
     const updateData = {
-      ...req.body,
       updatedAt: new Date(),
     };
 
-    if (req.file) {
-      updateData.featuredImage = req.file.path;
+    // ✅ nested fields
+    if (title_bn || title_en) {
+      updateData.title = {
+        bn: title_bn || "",
+        en: title_en || "",
+      };
+    }
+
+    if (summary_bn || summary_en) {
+      updateData.summary = {
+        bn: summary_bn || "",
+        en: summary_en || "",
+      };
+    }
+
+    if (content_bn || content_en) {
+      updateData.content = {
+        bn: content_bn || "",
+        en: content_en || "",
+      };
+    }
+
+    // ✅ simple fields
+    if (slug) updateData.slug = slug;
+    if (category) updateData.category = category;
+
+    // ✅ tags
+    if (tags) {
+      updateData.tags = tags.split(",").map((t) => t.trim());
+    }
+
+    // ✅ status
+    if (status) {
+      updateData.status = status;
+
+      if (status === "published") {
+        updateData.publishedAt = new Date();
+      }
+
+      if (status === "scheduled" && publishedAt) {
+        const parsed = new Date(publishedAt);
+        if (!isNaN(parsed)) {
+          updateData.publishedAt = parsed;
+        }
+      }
+
+      if (status === "draft") {
+        updateData.publishedAt = null;
+      }
+    }
+
+    // ✅ image (multiple support safe)
+    if (req.files && req.files.length > 0) {
+      updateData.featuredImage = req.files[0].path;
     }
 
     const result = await db
       .collection("news")
       .updateOne({ _id: new ObjectId(req.params.id) }, { $set: updateData });
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: true,
+      message: "News updated",
+      result,
+    });
   } catch (err) {
+    console.error("UPDATE ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };

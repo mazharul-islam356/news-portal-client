@@ -4,6 +4,7 @@ const helmet = require("helmet");
 require("dotenv").config();
 
 const adminRoutes = require("./modules/admin/admin.routes");
+const newsRoutes = require("./modules/news/news.routes");
 const categoryRoutes = require("./modules/category/category.routes");
 const upload = require("./middleware/upload"); // ✅ FIXED (no destructuring)
 
@@ -35,6 +36,7 @@ app.use(
 // =======================
 app.use("/api/admin", adminRoutes);
 app.use("/api/category", categoryRoutes);
+app.use("/api/news", newsRoutes);
 
 // =======================
 // IMAGE UPLOAD ROUTE

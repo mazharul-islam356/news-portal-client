@@ -6,7 +6,7 @@ const auth = require("../../middleware/auth");
 const upload = require("../../middleware/upload");
 
 // CREATE
-router.post("/", auth, upload.single("image"), controller.createNews);
+router.post("/", auth, upload.array("images", 5), controller.createNews);
 
 // GET ALL
 router.get("/", controller.getAllNews);
@@ -15,7 +15,7 @@ router.get("/", controller.getAllNews);
 router.get("/:id", controller.getSingleNews);
 
 // UPDATE
-router.put("/:id", auth, upload.single("image"), controller.updateNews);
+router.patch("/:id", upload.array("images", 5), controller.updateNews);
 
 // DELETE
 router.delete("/:id", auth, controller.deleteNews);
