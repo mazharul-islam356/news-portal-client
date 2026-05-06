@@ -28,6 +28,12 @@ const createNews = async (req, res) => {
         publishedAt = parsed;
       }
     }
+    const toFlag = (val) => {
+      const num = Number(val);
+      return num === 0 ? 0 : 1;
+    };
+
+    const images = req.files?.map((file) => file.path) || [];
 
     const news = {
       title: {
@@ -35,28 +41,35 @@ const createNews = async (req, res) => {
         en: req.body.title_en || "",
       },
 
-      summary: {
-        bn: req.body.summary_bn || "",
-        en: req.body.summary_en || "",
-      },
+      // summary: {
+      //   bn: req.body.summary_bn || "",
+      //   en: req.body.summary_en || "",
+      // },
 
       content: {
         bn: req.body.content_bn,
         en: req.body.content_en || "",
       },
 
-      slug: req.body.slug,
+      writer: req.body.writer,
 
       category: req.body.category || "general",
 
       tags: req.body.tags ? req.body.tags.split(",").map((t) => t.trim()) : [],
 
-      featuredImage: req.files?.[0]?.path || null,
+      featuredImage: images,
 
       views: 0,
 
-      status, // 👈 new
-      publishedAt, // 👈 new
+      // ✅ FLAGS (0/1 system)
+      isBreakingTop: toFlag(req.body.isBreakingTop),
+      isLatest: toFlag(req.body.isLatest),
+      isBreaking: toFlag(req.body.isBreaking),
+      isTrending: toFlag(req.body.isTrending),
+      isFeatured: toFlag(req.body.isFeatured),
+
+      status,
+      publishedAt,
 
       createdAt: new Date(),
       updatedAt: null,
@@ -73,6 +86,25 @@ const createNews = async (req, res) => {
   } catch (err) {
     console.error("CREATE NEWS ERROR:", err);
     return res.status(500).json({ message: err.message });
+  }
+};
+
+const getNewsByFlag = (flag) => async (req, res) => {
+  try {
+    const db = await connectDB();
+
+    const news = await db
+      .collection("news")
+      .find({
+        [flag]: 1,
+        status: "published",
+      })
+      .sort({ publishedAt: -1 })
+      .toArray();
+
+    res.json(news);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -146,13 +178,35 @@ const updateNews = async (req, res) => {
         en: title_en || "",
       };
     }
+    const toFlag = (val) => {
+      const num = Number(val);
+      return num === 0 ? 0 : 1;
+    };
 
-    if (summary_bn || summary_en) {
-      updateData.summary = {
-        bn: summary_bn || "",
-        en: summary_en || "",
-      };
+    // ✅ FLAGS UPDATE (0/1 system)
+    if (req.body.isBreakingTop !== undefined) {
+      updateData.isBreakingTop = toFlag(req.body.isBreakingTop);
     }
+    if (req.body.isLatest !== undefined) {
+      updateData.isLatest = toFlag(req.body.isLatest);
+    }
+    if (req.body.isBreaking !== undefined) {
+      updateData.isBreaking = toFlag(req.body.isBreaking);
+    }
+
+    if (req.body.isTrending !== undefined) {
+      updateData.isTrending = toFlag(req.body.isTrending);
+    }
+
+    if (req.body.isFeatured !== undefined) {
+      updateData.isFeatured = toFlag(req.body.isFeatured);
+    }
+    // if (summary_bn || summary_en) {
+    //   updateData.summary = {
+    //     bn: summary_bn || "",
+    //     en: summary_en || "",
+    //   };
+    // }
 
     if (content_bn || content_en) {
       updateData.content = {
@@ -162,7 +216,7 @@ const updateNews = async (req, res) => {
     }
 
     // ✅ simple fields
-    if (slug) updateData.slug = slug;
+    if (writer) updateData.writer = writer;
     if (category) updateData.category = category;
 
     // ✅ tags
@@ -229,6 +283,7 @@ const deleteNews = async (req, res) => {
 module.exports = {
   createNews,
   getAllNews,
+  getNewsByFlag,
   getSingleNews,
   updateNews,
   deleteNews,
