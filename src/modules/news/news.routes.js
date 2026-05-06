@@ -10,6 +10,7 @@ router.post("/", auth, upload.array("images", 5), controller.createNews);
 
 // GET ALL
 router.get("/", controller.getAllNews);
+router.get("/category", controller.getNewsByCategory);
 router.get("/breaking-news", controller.getNewsByFlag("isBreaking"));
 router.get("/trending-news", controller.getNewsByFlag("isTrending"));
 router.get("/featured-news", controller.getNewsByFlag("isFeatured"));

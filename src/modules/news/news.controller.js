@@ -30,7 +30,7 @@ const createNews = async (req, res) => {
     }
     const toFlag = (val) => {
       const num = Number(val);
-      return num === 0 ? 0 : 1;
+      return num === 1 ? 1 : 0;
     };
 
     const images = req.files?.map((file) => file.path) || [];
@@ -51,9 +51,15 @@ const createNews = async (req, res) => {
         en: req.body.content_en || "",
       },
 
-      writer: req.body.writer,
+      writer: {
+        bn: req.body.writer_bn,
+        en: req.body.writer_en || "",
+      },
 
-      category: req.body.category || "general",
+      category: {
+        bn: req.body.category_bn,
+        en: req.body.category_en || "",
+      },
 
       tags: req.body.tags ? req.body.tags.split(",").map((t) => t.trim()) : [],
 
@@ -145,6 +151,44 @@ const getSingleNews = async (req, res) => {
     res.status(200).json(news);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// category wise news
+const getNewsByCategory = async (req, res) => {
+  try {
+    const db = await connectDB();
+
+    const { category, lang = "en" } = req.query;
+
+    if (!category) {
+      return res.status(400).json({
+        message: "category is required",
+      });
+    }
+
+    const categoryField = `category.${lang}`;
+
+    const news = await db
+      .collection("news")
+      .find({
+        [categoryField]: {
+          $regex: `^${category}$`,
+          $options: "i", // case-insensitive
+        },
+        status: "published",
+      })
+      .sort({ publishedAt: -1 })
+      .toArray();
+
+    return res.status(200).json({
+      success: true,
+      total: news.length,
+      data: news,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -286,5 +330,6 @@ module.exports = {
   getNewsByFlag,
   getSingleNews,
   updateNews,
+  getNewsByCategory,
   deleteNews,
 };
