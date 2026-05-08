@@ -231,34 +231,66 @@ const updateNews = async (req, res) => {
     const {
       title_bn,
       title_en,
-      summary_bn,
-      summary_en,
       content_bn,
       content_en,
-      slug,
-      category,
+      writer_bn,
+      writer_en,
+      category_bn,
+      category_en,
       tags,
       status,
       publishedAt,
+      existingImages,
     } = req.body;
 
     const updateData = {
       updatedAt: new Date(),
     };
 
-    // ✅ nested fields
+    // Helper function to convert to 0/1
+    const toFlag = (val) => {
+      const num = Number(val);
+      return num === 1 ? 1 : 0;
+    };
+
+    // Update title
     if (title_bn || title_en) {
       updateData.title = {
         bn: title_bn || "",
         en: title_en || "",
       };
     }
-    const toFlag = (val) => {
-      const num = Number(val);
-      return num === 0 ? 0 : 1;
-    };
 
-    // ✅ FLAGS UPDATE (0/1 system)
+    // Update content
+    if (content_bn || content_en) {
+      updateData.content = {
+        bn: content_bn || "",
+        en: content_en || "",
+      };
+    }
+
+    // Update writer
+    if (writer_bn || writer_en) {
+      updateData.writer = {
+        bn: writer_bn || "",
+        en: writer_en || "",
+      };
+    }
+
+    // Update category
+    if (category_bn || category_en) {
+      updateData.category = {
+        bn: category_bn || "",
+        en: category_en || "",
+      };
+    }
+
+    // Update tags
+    if (tags) {
+      updateData.tags = tags.split(",").map((t) => t.trim());
+    }
+
+    // Update flags
     if (req.body.isBreakingTop !== undefined) {
       updateData.isBreakingTop = toFlag(req.body.isBreakingTop);
     }
@@ -268,69 +300,66 @@ const updateNews = async (req, res) => {
     if (req.body.isBreaking !== undefined) {
       updateData.isBreaking = toFlag(req.body.isBreaking);
     }
-
     if (req.body.isTrending !== undefined) {
       updateData.isTrending = toFlag(req.body.isTrending);
     }
-
     if (req.body.isFeatured !== undefined) {
       updateData.isFeatured = toFlag(req.body.isFeatured);
     }
-    // if (summary_bn || summary_en) {
-    //   updateData.summary = {
-    //     bn: summary_bn || "",
-    //     en: summary_en || "",
-    //   };
-    // }
 
-    if (content_bn || content_en) {
-      updateData.content = {
-        bn: content_bn || "",
-        en: content_en || "",
-      };
-    }
-
-    // ✅ simple fields
-    if (writer) updateData.writer = writer;
-    if (category) updateData.category = category;
-
-    // ✅ tags
-    if (tags) {
-      updateData.tags = tags.split(",").map((t) => t.trim());
-    }
-
-    // ✅ status
+    // Update status and publishedAt
     if (status) {
       updateData.status = status;
 
       if (status === "published") {
         updateData.publishedAt = new Date();
-      }
-
-      if (status === "scheduled" && publishedAt) {
+      } else if (status === "scheduled" && publishedAt) {
         const parsed = new Date(publishedAt);
         if (!isNaN(parsed)) {
           updateData.publishedAt = parsed;
         }
-      }
-
-      if (status === "draft") {
+      } else if (status === "draft") {
         updateData.publishedAt = null;
       }
     }
 
-    // ✅ image (multiple support safe)
+    // Handle images (combine existing + new)
+    let allImages = [];
+
+    // Keep existing images
+    if (existingImages) {
+      if (Array.isArray(existingImages)) {
+        allImages.push(...existingImages);
+      } else if (typeof existingImages === "string") {
+        allImages.push(existingImages);
+      }
+    }
+
+    // Add new uploaded images
     if (req.files && req.files.length > 0) {
-      updateData.featuredImage = req.files[0].path;
+      const newImagePaths = req.files.map((file) => file.path);
+      allImages.push(...newImagePaths);
+    }
+
+    // Update featuredImage array
+    if (allImages.length > 0) {
+      updateData.featuredImage = allImages;
+    } else if (allImages.length === 0 && existingImages === undefined) {
+      // If no images at all (existing removed and no new added)
+      updateData.featuredImage = [];
     }
 
     const result = await db
       .collection("news")
       .updateOne({ _id: new ObjectId(req.params.id) }, { $set: updateData });
 
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "News not found" });
+    }
+
     res.status(200).json({
       success: true,
-      message: "News updated",
+      message: "News updated successfully",
       result,
     });
   } catch (err) {
