@@ -16,7 +16,7 @@ router.get("/trending-news", controller.getNewsByFlag("isTrending"));
 router.get("/featured-news", controller.getNewsByFlag("isFeatured"));
 router.get("/latest-news", controller.getNewsByFlag("isLatest"));
 router.get("/breaking-top-news", controller.getNewsByFlag("isBreakingTop"));
-
+router.get("/news/:id", controller.getNewsById);
 // GET SINGLE
 router.get("/:id", controller.getSingleNews);
 

@@ -13,7 +13,7 @@ const connectDB = async () => {
 
   db = client.db("news_portal");
 
-  console.log("MongoDB connected");
+  console.log("🔗 MongoDB connected");
 
   return db;
 };

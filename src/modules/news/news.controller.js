@@ -12,6 +12,12 @@ const createNews = async (req, res) => {
       });
     }
 
+    if (!req.body.category_bn || !req.body.category_en) {
+      return res.status(400).json({
+        message: "Category required!",
+      });
+    }
+
     // status
     const status = req.body.status || "draft";
 
@@ -128,6 +134,31 @@ const getAllNews = async (req, res) => {
     res.status(200).json(news);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// news details
+const getNewsById = async (req, res) => {
+  try {
+    const db = await connectDB();
+
+    const { id } = req.params;
+
+    const news = await db.collection("news").findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!news) {
+      return res.status(404).json({
+        message: "News not found",
+      });
+    }
+
+    res.status(200).json(news);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -332,4 +363,5 @@ module.exports = {
   updateNews,
   getNewsByCategory,
   deleteNews,
+  getNewsById,
 };
